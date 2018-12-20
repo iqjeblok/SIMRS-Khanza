@@ -4881,16 +4881,25 @@ private void MnDokterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRS
             WindowGantiDokter.setLocationRelativeTo(internalFrame1);
             WindowGantiDokter.setVisible(true);
         }else{
-            if(Sequel.cariRegistrasi(TNoRw.getText())>0){
-                JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi..!!");
-            }else{ 
+            jmlparsial=0;
+            if(aktifkanparsial.equals("yes")){
+                jmlparsial=Sequel.cariInteger("select count(kd_pj) from set_input_parsial where kd_pj=?",tbKasirRalan.getValueAt(tbKasirRalan.getSelectedRow(),17).toString());
+            }
+            if(jmlparsial>0){
                 WindowGantiDokter.setSize(630,80);
                 WindowGantiDokter.setLocationRelativeTo(internalFrame1);
                 WindowGantiDokter.setVisible(true);
-            }
-        }             
+            }else{
+                if(Sequel.cariRegistrasi(TNoRw.getText())>0){
+                    JOptionPane.showMessageDialog(rootPane,"Data billing sudah terverifikasi ..!!");
+                }else{ 
+                    WindowGantiDokter.setSize(630,80);
+                    WindowGantiDokter.setLocationRelativeTo(internalFrame1);
+                    WindowGantiDokter.setVisible(true);
+                }
+            }                        
+        }          
     }
-    
 }//GEN-LAST:event_MnDokterActionPerformed
 
 private void MnPenjualanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MnPenjualanActionPerformed
@@ -5626,7 +5635,7 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
             tbKasirRalan.requestFocus();
         }else{
             Sequel.menyimpan("mutasi_berkas","'"+TNoRw.getText()+"','Sudah Diterima',now(),now(),'0000-00-00 00:00:00','0000-00-00 00:00:00','0000-00-00 00:00:00'","status='Sudah Diterima',diterima=now()","no_rawat='"+TNoRw.getText()+"'");
-            Valid.editTable(tabModekasir,"reg_periksa","no_rawat",TNoRw,"stts='Berkas Diterima'");
+            Valid.editTable(tabModekasir,"reg_periksa","no_rawat",TNoRw,"stts='Dirawat'");
             if(tabModekasir.getRowCount()!=0){tampilkasir();}
         }
     }//GEN-LAST:event_ppBerkasBtnPrintActionPerformed
@@ -7236,7 +7245,7 @@ private void MnDataPemberianObatActionPerformed(java.awt.event.ActionEvent evt) 
             tbKasirRalan.requestFocus();
         }else{
             Sequel.menyimpan("mutasi_berkas","'"+TNoRw.getText()+"','Masuk Ranap',now(),now(),'0000-00-00 00:00:00','0000-00-00 00:00:00',now()","status='Masuk Ranap',ranap=now()","no_rawat='"+TNoRw.getText()+"'");
-            Valid.editTable(tabModekasir,"reg_periksa","no_rawat",TNoRw,"stts='Dirawat'");
+            Valid.editTable(tabModekasir,"reg_periksa","no_rawat",TNoRw,"stts='Berkas Diterima'");
             if(tabModekasir.getRowCount()!=0){tampilkasir();}
         }
     }//GEN-LAST:event_ppBerkasRanapBtnPrintActionPerformed
