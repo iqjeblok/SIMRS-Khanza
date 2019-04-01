@@ -35,8 +35,6 @@ import javax.swing.event.DocumentEvent;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 
 /**
  *
@@ -50,6 +48,12 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
     private int i=0;
     private SisruteApi api=new SisruteApi();
     private String URL="",link="";
+    private HttpHeaders headers ;
+    private HttpEntity requestEntity;
+    private ObjectMapper mapper = new ObjectMapper();
+    private JsonNode root;
+    private JsonNode nameNode;
+    private JsonNode response;
 
     /** Creates new form DlgKamar
      * @param parent
@@ -86,11 +90,23 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
         if(koneksiDB.cariCepat().equals("aktif")){
             diagnosa.getDocument().addDocumentListener(new javax.swing.event.DocumentListener(){
                 @Override
-                public void insertUpdate(DocumentEvent e) {tampil(diagnosa.getText());}
+                public void insertUpdate(DocumentEvent e) {
+                    if(diagnosa.getText().length()>2){
+                        tampil(diagnosa.getText());
+                    }
+                }
                 @Override
-                public void removeUpdate(DocumentEvent e) {tampil(diagnosa.getText());}
+                public void removeUpdate(DocumentEvent e) {
+                    if(diagnosa.getText().length()>2){
+                        tampil(diagnosa.getText());
+                    }
+                }
                 @Override
-                public void changedUpdate(DocumentEvent e) {tampil(diagnosa.getText());}
+                public void changedUpdate(DocumentEvent e) {
+                    if(diagnosa.getText().length()>2){
+                        tampil(diagnosa.getText());
+                    }
+                }
             });
         }   
         try {
@@ -137,7 +153,6 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
         Scroll.setOpaque(true);
 
         tbKamar.setAutoCreateRowSorter(true);
-        tbKamar.setToolTipText("Silahkan klik untuk memilih data yang mau diedit ataupun dihapus");
         tbKamar.setName("tbKamar"); // NOI18N
         Scroll.setViewportView(tbKamar);
 
@@ -236,7 +251,7 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
             //TCari.requestFocus();
         }else if(tabMode.getRowCount()!=0){
             this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            Sequel.AutoComitFalse();
+            
             Sequel.queryu("delete from temporary");
             int row=tabMode.getRowCount();
             for(int r=0;r<row;r++){  
@@ -245,7 +260,7 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
                                 tabMode.getValueAt(r,1).toString().replaceAll("'","`")+"','"+
                                 tabMode.getValueAt(r,2).toString().replaceAll("'","`")+"','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','',''","Rekap Harian Pengadaan Ipsrs"); 
             }
-            Sequel.AutoComitTrue();
+            
             Map<String, Object> param = new HashMap<>();                 
             param.put("namars",var.getnamars());
             param.put("alamatrs",var.getalamatrs());
@@ -276,8 +291,8 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
 
     private void BtnCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BtnCariActionPerformed
         this.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        if(diagnosa.getText().trim().equals("")){
-            JOptionPane.showMessageDialog(null,"Silahkan masukkan pencarian terlebih dahulu..!!!");
+        if(diagnosa.getText().trim().length()<3){
+            JOptionPane.showMessageDialog(null,"Silahkan masukkan pencarian terlebih dahulu. Minimal 3 karakter...!!!");
             diagnosa.requestFocus();
         }else{
             tampil(diagnosa.getText());
@@ -326,46 +341,29 @@ public final class SisruteCekReferensiDiagnosa extends javax.swing.JDialog {
     public void tampil(String faskes) {
         try {
             Valid.tabelKosong(tabMode);
-            if(faskes.equals("")){
-                URL = link+"/referensi/diagnosa";
-            }else{
-                URL = link+"/referensi/diagnosa/"+faskes;
-            }   
-                	
-            HttpHeaders headers = new HttpHeaders();
+            URL = link+"/referensi/diagnosa?query="+faskes;
+            headers = new HttpHeaders();
 	    headers.add("X-cons-id",prop.getProperty("IDSISRUTE"));
 	    headers.add("X-Timestamp",String.valueOf(api.GetUTCdatetimeAsString())); 
 	    headers.add("X-signature",api.getHmac()); 
 	    headers.add("Content-type","application/json");             
-	    headers.add("Content-length",null);            
-	    HttpEntity requestEntity = new HttpEntity(headers);
-            RestTemplate rest = new RestTemplate();
-            //System.out.println(URL);
-	    //System.out.println(api.getRest().exchange(URL, HttpMethod.GET, requestEntity, String.class).getBody());
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(api.getRest().exchange(URL, HttpMethod.GET, requestEntity, String.class).getBody());
-            JsonNode nameNode = root.path("status");
+	    headers.add("Content-length",null);     	
+            requestEntity = new HttpEntity(headers);
+            root = mapper.readTree(api.getRest().exchange(URL, HttpMethod.GET, requestEntity, String.class).getBody());
+            nameNode = root.path("status");
             System.out.println("Result : "+root.path("status").asText());
             if(nameNode.asText().equals("200")){
                 Valid.tabelKosong(tabMode);
-                JsonNode response = root.path("data");
-                if(faskes.equals("")){
-                    if(response.isArray()){
-                        i=1;
-                        for(JsonNode list:response){
-                            tabMode.addRow(new Object[]{
-                                    i+".",list.path("KODE").asText(),list.path("NAMA").asText()
-                            });
-                            i++;
-                        }
+                response = root.path("data");
+                if(response.isArray()){
+                    i=1;
+                    for(JsonNode list:response){
+                        tabMode.addRow(new Object[]{
+                                i+".",list.path("KODE").asText(),list.path("NAMA").asText()
+                        });
+                        i++;
                     }
-                }else{
-                    i=1;                       
-                    tabMode.addRow(new Object[]{
-                            i+".",response.path("KODE").asText(),response.path("NAMA").asText()
-                    });
-                    i++;
-                }                    
+                }                  
             }else {
                 JOptionPane.showMessageDialog(null,root.path("detail").asText());               
             }   
